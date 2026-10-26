@@ -1,0 +1,143 @@
+-- Session 12: CTE (WITH Clause)
+
+-- Task 1: Find products with a rating above 4.5 using a CTE.
+
+CREATE TABLE Products (
+    id INT PRIMARY KEY,
+    product_name VARCHAR(100),
+    rating DECIMAL(2,1)
+);
+
+INSERT INTO Products VALUES
+(1, 'Headphones', 4.7),
+(2, 'T-Shirt', 4.2),
+(3, 'Smart Watch', 4.8),
+(4, 'SQL Book', 4.5),
+(5, 'Keyboard', 4.6);
+
+WITH TopProducts AS (
+    SELECT *
+    FROM Products
+    WHERE rating > 4.5
+)
+SELECT *
+FROM TopProducts;
+
+
+-- Task 2: Find restaurants in Ahmedabad with delivery charges under 50.
+-- First method: using a subquery.
+
+DROP TABLE IF EXISTS Restaurants;
+
+CREATE TABLE Restaurants (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    city VARCHAR(100),
+    delivery_charges DECIMAL(6,2)
+);
+
+INSERT INTO Restaurants VALUES
+(1, 'Pizza Palace', 'Ahmedabad', 30),
+(2, 'Spice Garden', 'Ahmedabad', 45),
+(3, 'Burger House', 'Ahmedabad', 60),
+(4, 'Tasty Treat', 'Surat', 25);
+
+SELECT *
+FROM Restaurants
+WHERE id IN (
+    SELECT id
+    FROM Restaurants
+    WHERE city = 'Ahmedabad'
+      AND delivery_charges < 50
+);
+
+-- Second method: using a CTE.
+
+WITH AhmedabadRestaurants AS (
+    SELECT *
+    FROM Restaurants
+    WHERE city = 'Ahmedabad'
+      AND delivery_charges < 50
+)
+SELECT *
+FROM AhmedabadRestaurants;
+
+-- The CTE version is easier to read because the filtering logic has a name.
+
+
+-- Task 3: Use two CTEs to find the top 3 most-followed users and
+-- top 3 most-liked posts in one result set.
+
+DROP TABLE IF EXISTS Posts;
+DROP TABLE IF EXISTS Users;
+
+CREATE TABLE Users (
+    id INT PRIMARY KEY,
+    username VARCHAR(100),
+    followers INT
+);
+
+CREATE TABLE Posts (
+    id INT PRIMARY KEY,
+    post_text VARCHAR(200),
+    likes INT
+);
+
+INSERT INTO Users VALUES
+(1, 'pooja', 1500),
+(2, 'rahul', 2200),
+(3, 'amit', 900),
+(4, 'neha', 1800),
+(5, 'riya', 1200);
+
+INSERT INTO Posts VALUES
+(1, 'First post', 350),
+(2, 'Travel photo', 520),
+(3, 'Food picture', 270),
+(4, 'College event', 610),
+(5, 'Nature photo', 430);
+
+WITH TopUsers AS (
+    SELECT username AS item_name, followers AS count_value,
+           'User' AS item_type
+    FROM Users
+    ORDER BY followers DESC
+    LIMIT 3
+),
+TopPosts AS (
+    SELECT post_text AS item_name, likes AS count_value,
+           'Post' AS item_type
+    FROM Posts
+    ORDER BY likes DESC
+    LIMIT 3
+)
+SELECT item_type, item_name, count_value
+FROM TopUsers
+UNION ALL
+SELECT item_type, item_name, count_value
+FROM TopPosts;
+
+
+-- Task 4: Generate dates for the next 7 days, starting today.
+-- MySQL 8.0 supports recursive CTEs.
+
+WITH RECURSIVE NextSevenDays AS (
+    SELECT CURDATE() AS booking_date, 1 AS day_number
+    UNION ALL
+    SELECT DATE_ADD(booking_date, INTERVAL 1 DAY), day_number + 1
+    FROM NextSevenDays
+    WHERE day_number < 7
+)
+SELECT booking_date
+FROM NextSevenDays;
+
+
+-- Task 5: Use a CTE to find users with more than 1000 followers.
+
+WITH UserFollowers AS (
+    SELECT id, username, followers
+    FROM Users
+)
+SELECT *
+FROM UserFollowers
+WHERE followers > 1000;
